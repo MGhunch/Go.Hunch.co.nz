@@ -41,21 +41,25 @@ body.live #tapnav, body.presenting #tapnav{display:block}
 .go-btn.hidden{opacity:0;pointer-events:none}
 
 /* ============================================================================
-   FRONT DOOR (/) — three round buttons on the red ground (cookied only)
+   FRONT DOOR (/) — Dots behind, three solid buttons at the bottom (cookied only)
    ========================================================================== */
-.dock{position:fixed;inset:0;z-index:50;display:flex;align-items:center;
-  justify-content:center;gap:28px;padding:24px}
-.rnd{width:96px;height:96px;border-radius:50%;background:var(--red);
-  border:2.5px solid #fff;cursor:pointer;display:flex;align-items:center;
-  justify-content:center;padding:0;-webkit-tap-highlight-color:transparent;
-  transition:transform .15s ease, background .15s ease}
-.rnd svg{width:52px;height:52px}
-.rnd:hover{transform:translateY(-3px)}
-.rnd:active{transform:translateY(0)}
-.rnd:hover{background:#fff}
-.rnd:hover svg{stroke:var(--red)}      /* invert on hover for feedback */
+.dock{position:fixed;left:0;right:0;bottom:calc(48px + env(safe-area-inset-bottom));
+  z-index:50;display:flex;align-items:center;justify-content:center;gap:34px;padding:0 24px}
+.rnd{width:104px;height:104px;border-radius:50%;background:#fff;border:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 12px 30px rgba(0,0,0,.28);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease}
+.rnd svg{width:58px;height:58px}
+/* sink on press — presses in and dims, like a real button */
+.rnd:active{transform:translateY(2px) scale(.955);box-shadow:0 4px 12px rgba(0,0,0,.22);background:#EDE9E4}
 .rnd:focus-visible{outline:3px solid #fff;outline-offset:4px}
-@media (max-width:420px){ .rnd{width:80px;height:80px} .rnd svg{width:44px;height:44px} .dock{gap:20px} }
+/* SET UP holds solid-red while its drawer is open */
+.rnd.on{background:var(--red);box-shadow:0 12px 30px rgba(0,0,0,.32)}
+.rnd.on svg [stroke]{stroke:#fff}
+.rnd.on svg{stroke:#fff}
+.rnd.on svg circle[fill="#fff"]{fill:var(--red)}
+@media (max-width:420px){ .rnd{width:88px;height:88px} .rnd svg{width:50px;height:50px} .dock{gap:24px} }
 
 /* ---- SET UP modal (a drawer, not a mode) ---- */
 .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;

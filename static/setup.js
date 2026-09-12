@@ -9,9 +9,12 @@
   const msg = document.getElementById('up-msg');
   let decks = [], live = null, online = true;
 
-  document.getElementById('setup-btn').onclick = () => { modal.hidden = false; refresh(); };
-  document.getElementById('setup-close').onclick = () => { modal.hidden = true; };
-  modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+  const setupBtn = document.getElementById('setup-btn');
+  function openModal() { modal.hidden = false; setupBtn.classList.add('on'); refresh(); }
+  function closeModal() { modal.hidden = true; setupBtn.classList.remove('on'); }
+  setupBtn.onclick = openModal;
+  document.getElementById('setup-close').onclick = closeModal;
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
   async function refresh() {
     try {
