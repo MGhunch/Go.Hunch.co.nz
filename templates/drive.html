@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GO — drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/go.css">
+</head>
+<body>
+  <div class="drive">
+    {% if not authed %}
+    <div class="gate">
+      <div class="drive-head">GO — DRIVE</div>
+      <p class="muted">Enter the key to drive. (Rough gate for now — real sign-in comes next.)</p>
+      <input id="key" type="password" placeholder="key" autocomplete="off">
+      <button onclick="location.href='/drive?key='+encodeURIComponent(document.getElementById('key').value)">UNLOCK</button>
+    </div>
+    {% else %}
+    <div class="drive-head">GO — DRIVE</div>
+    <div class="shelf" id="shelf"></div>
+    <div class="controls" id="controls" style="display:none">
+      <div class="page-read" id="pageread">—</div>
+      <div class="nav">
+        <button id="back">BACK</button>
+        <button id="next">NEXT</button>
+      </div>
+      <button class="end" id="end">END — BACK TO DOTS</button>
+    </div>
+    <script src="/static/drive.js"></script>
+    {% endif %}
+  </div>
+</body>
+</html>

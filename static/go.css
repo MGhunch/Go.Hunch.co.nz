@@ -1,0 +1,91 @@
+/* ============================================================================
+   GO chrome. Holding page (Dots) + deck view + GO button, and the DRIVE side.
+   ========================================================================== */
+html,body{margin:0;height:100%;background:var(--red);overflow:hidden;
+  font-family:var(--body);-webkit-tap-highlight-color:transparent}
+
+/* ---- Dots holding page (from the mock) ---- */
+#hunch-splash{position:fixed;inset:0;overflow:hidden;background:var(--red)}
+#hunch-splash canvas{position:absolute;inset:0;width:100%;height:100%}
+#hs-field{z-index:1}
+#hs-picture{z-index:2;pointer-events:none}
+.hs-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.hs-insight{position:absolute;left:0;right:0;z-index:20;text-align:center;padding:0 24px;
+  font-size:16px;line-height:1.5;color:var(--white-hi);opacity:0}
+.hs-insight b{font-weight:600;color:#fff;display:inline-block}
+.hs-insight .rest{display:inline-block}
+@media (max-width:640px){ .hs-insight{font-size:15px} }
+
+/* ---- the deck (PLAY, when a job is live) ---- */
+#deck{position:fixed;inset:0;z-index:10;background:var(--ink);display:none;
+  align-items:center;justify-content:center}
+#deck-canvas{max-width:100%;max-height:100%;display:block}
+body.live #hunch-splash{display:none}
+body.live #deck{display:flex}
+
+/* invisible tap-to-advance zones — right half = next, left half = back.
+   Nobody taps a client's laptop; essential on a shared iPad. */
+#tapnav{position:fixed;inset:0;z-index:12;display:none}
+body.live #tapnav{display:block}
+
+/* ---- the GO button (dynamic label, from the mock) ---- */
+.go-btn{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:30;
+  cursor:pointer;border:0;background:#fff;color:var(--red);
+  font-family:var(--display);font-size:26px;letter-spacing:.06em;
+  padding:15px 46px;border-radius:var(--pill);box-shadow:0 6px 24px rgba(0,0,0,.18);
+  transition:transform .15s ease, box-shadow .2s ease, opacity .35s ease}
+.go-btn:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.26)}
+.go-btn:active{transform:translateX(-50%) translateY(0)}
+.go-btn:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.go-btn.hidden{opacity:0;pointer-events:none}
+
+/* ============================================================================
+   MODE CHOOSER (/)
+   ========================================================================== */
+.chooser{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:34px;padding:24px;text-align:center}
+.chooser h1{font-family:var(--display);color:#fff;font-size:64px;letter-spacing:.04em;
+  margin:0;line-height:.9}
+.chooser p{color:var(--white-hi);margin:0 0 6px;font-size:17px}
+.chooser .pair{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+.pill{border:0;cursor:pointer;background:#fff;color:var(--red);
+  font-family:var(--display);font-size:30px;letter-spacing:.06em;
+  padding:22px 52px;border-radius:var(--pill);box-shadow:0 6px 24px rgba(0,0,0,.18);
+  text-decoration:none;transition:transform .15s ease}
+.pill:hover{transform:translateY(-2px)}
+.pill small{display:block;font-family:var(--body);font-size:12px;font-weight:600;
+  letter-spacing:.02em;opacity:.6;margin-top:4px}
+
+/* ============================================================================
+   DRIVE (/drive)
+   ========================================================================== */
+.drive{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+  color:#fff;padding:22px;box-sizing:border-box}
+.drive-head{font-family:var(--display);font-size:22px;letter-spacing:.06em;
+  opacity:.85;margin-bottom:14px}
+.shelf{display:flex;flex-direction:column;gap:10px;overflow:auto}
+.deck-btn{border:0;cursor:pointer;text-align:left;background:#fff;color:var(--red);
+  border-radius:16px;padding:16px 18px;font-family:var(--display);font-size:24px;
+  letter-spacing:.04em;line-height:1}
+.deck-btn small{display:block;font-family:var(--body);font-weight:600;font-size:12px;
+  letter-spacing:.02em;color:var(--ink);opacity:.55;margin-top:6px}
+.deck-btn.on{outline:4px solid #fff}
+
+/* driving controls */
+.controls{margin-top:auto;display:flex;flex-direction:column;gap:14px;align-items:center}
+.page-read{font-family:var(--display);font-size:20px;letter-spacing:.08em;opacity:.9}
+.nav{display:flex;gap:14px;width:100%}
+.nav button{flex:1;border:0;cursor:pointer;background:#fff;color:var(--red);
+  font-family:var(--display);font-size:34px;letter-spacing:.04em;
+  padding:26px 0;border-radius:20px}
+.nav button:active{transform:translateY(1px)}
+.nav button:disabled{opacity:.4;cursor:default}
+.end{width:100%;border:2px solid rgba(255,255,255,.5);background:transparent;color:#fff;
+  cursor:pointer;font-family:var(--display);font-size:18px;letter-spacing:.08em;
+  padding:14px 0;border-radius:var(--pill)}
+.gate{margin:auto;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.gate input{font-size:18px;padding:12px 16px;border-radius:12px;border:0;text-align:center}
+.gate button{border:0;cursor:pointer;background:#fff;color:var(--red);
+  font-family:var(--display);font-size:22px;letter-spacing:.06em;padding:12px 32px;border-radius:var(--pill)}
+.muted{color:var(--white-hi);font-size:14px;max-width:300px}

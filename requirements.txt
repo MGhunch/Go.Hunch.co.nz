@@ -1,0 +1,8 @@
+# Pinned to match the Robot Sandwich family where shared.
+Flask==3.1.3
+gunicorn==26.2.0
+# GO renders PDFs client-side (PDF.js) and only needs a server-side page count,
+# so it uses lightweight pypdf — NOT Robot Sandwich's pdfplumber, which is there
+# for copy extraction GO doesn't do. Swap to pdfplumber if you'd rather one lib
+# across the family.
+pypdf==6.1.1

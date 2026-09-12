@@ -1,0 +1,28 @@
+/* ===========================================================================
+   HUNCH TOKENS
+   Lifted from Prompter so the family stays coherent. Copy this file into any
+   new Hunch tool rather than importing it — no shared dependency, no coupling,
+   and nobody eyedroppers a hex off a screenshot ever again.
+   =========================================================================== */
+:root{
+  /* Core */
+  --red:#ED1C24; --red-dark:#C8141B;
+  --ink:#1A1917; --white:#FFFFFF;
+  --paper:#F5F3EF; --border:#E8E5E0; --mid:#9A9590;
+
+  /* White-on-red overlays */
+  --white-hi:rgba(255,255,255,.75);
+  --white-mid:rgba(255,255,255,.45);
+  --white-lo:rgba(255,255,255,.20);
+
+  /* Flags and diffs */
+  --yellow:#FAF06E; --delta:rgba(237,28,36,.13);
+
+  /* Layout */
+  --g:32px;
+  --r-sm:8px; --r-md:12px; --r-lg:14px; --pill:100px;
+
+  /* Type */
+  --display:'Bebas Neue',Impact,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+}
