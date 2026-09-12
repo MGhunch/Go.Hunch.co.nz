@@ -3,36 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GO — drive</title>
+<title>GO — driving</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/go.css">
 </head>
-<body>
-  <div class="drive">
-    {% if not authed %}
-    <div class="gate">
-      <div class="drive-head">GO — DRIVE</div>
-      <p class="muted">Enter the key to drive. (Rough gate for now — real sign-in comes next.)</p>
-      <input id="key" type="password" placeholder="key" autocomplete="off">
-      <button onclick="location.href='/drive?key='+encodeURIComponent(document.getElementById('key').value)">UNLOCK</button>
-    </div>
-    {% else %}
-    <div class="drive-head"><span class="dot" id="dot" title="server connection"></span>GO — DRIVE</div>
+<body data-mode="drive">
+
+  <!-- the shelf: pick a pack to run (shown until one's presenting) -->
+  <div class="drive-pick" id="pick">
+    <div class="drive-head"><span class="dot" id="dot"></span>DRIVING</div>
     <div class="shelf" id="shelf"></div>
-    <div class="controls" id="controls" style="display:none">
-      <div class="page-read" id="pageread">—</div>
-      <div class="nav">
-        <button id="back">BACK</button>
-        <button id="next">NEXT</button>
-      </div>
-      <a class="save" id="save" download>SAVE DECK TO THIS DEVICE</a>
-      <button class="end" id="end">END — BACK TO DOTS</button>
-    </div>
-    <script src="/static/drive.js"></script>
-    {% endif %}
   </div>
+
+  <!-- present here: this machine shows the deck it's driving -->
+  <div id="deck"><canvas id="deck-canvas"></canvas></div>
+  <div id="tapnav"></div>
+
+  <!-- auto-hiding control strip (Michael's, gets out of the way for the room) -->
+  <div class="strip" id="strip">
+    <span class="dot" id="dot2"></span>
+    <span class="page-read" id="pageread">—</span>
+    <a class="s-btn" id="save" download>SAVE</a>
+    <button class="s-btn" id="switch">SWITCH</button>
+    <button class="s-btn" id="end">END</button>
+    <button class="s-btn" id="full">FULL SCREEN</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+  </script>
+  <script src="/static/drive.js"></script>
 </body>
 </html>

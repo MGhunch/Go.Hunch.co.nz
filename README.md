@@ -8,21 +8,32 @@ the wire, the server, or the wifi lets go.
 
 - One server holds the truth: which job is live, and what page it's on — and
   **writes it to disk on every move, so a restart never loses the room.**
-- Two dumb views off that server:
-  - **PLAY** (`/play`) — the screen. Hunch Dots at rest; the deck when a job is
-    pushed. One tap for fullscreen, then never touched again.
-  - **DRIVE** (`/drive`) — your phone. Pick the pack, next / back, end, plus a
-    **red/green wire dot** (can this phone reach the server?) and a one-tap
-    **save-deck** for the cable floor.
+- **The cookie decides what a machine is.** Every device opens the same URL; the
+  only question is whether this browser carries Michael's cookie:
+  - **No cookie — a client machine.** A dumb screen, always. Straight to the
+    Dots, takes the deck when it's pushed, one fullscreen tap, never a choice,
+    nothing to type. It can't drive, because it isn't his.
+  - **Cookied — Michael's machine.** Lands on the Dots with **three round
+    buttons**: **DRIVING** (steering wheel), **SHOWING** (screen), **SET UP**
+    (cog).
+    - **SHOWING** — a dumb screen like a client's (laptop plugged into the room
+      TV, driven from his phone).
+    - **DRIVING** — this machine runs the show. Pick a pack and it presents
+      **right here**: deck fullscreen, space / arrows / click to turn. Turns are
+      **local-first** — instant, then synced so it persists and any SHOWING
+      screen follows. Works with no wifi once loaded.
+    - **SET UP** — a prep drawer (not a mode): opens over the Dots, closes back
+      to the buttons. **Choose a presentation** (loads it, waiting) or **Upload
+      a new one** onto the volume. Prep in the lift; walk in ready.
 - The two devices **never talk to each other** — both just reach the server, on
-  any network. You on cellular, client on their wifi: doesn't matter.
-- The **live line** (Server-Sent Events) pushes page turns to the screen one
-  way. If it drops it **holds the last page** and reconnects itself silently.
-- **Hand-over floor:** the screen's space/arrow keys are always armed but held
-  down by the wire's beat. If the beat stops for a couple of seconds, the first
-  keypress drives the deck locally — and latches. The wire coming back does not
-  reclaim the room. One-way, no reconcile. ("Would you mind driving — press
-  space.")
+  any network. He on cellular, client on their wifi: doesn't matter.
+- The **live line** (SSE) pushes the live page to SHOWING screens one way. If it
+  drops the screen **holds the last page** and reconnects itself silently.
+- **Hand-over floor (client SHOWING screen only):** its space/arrow keys are
+  always armed but held down by the wire's beat. If the beat stops for a couple
+  of seconds, the first keypress drives the deck locally — and latches. The wire
+  coming back does not reclaim the room. One-way, no reconcile. ("Would you mind
+  driving — press space.")
 
 Test deck baked in: `presentations/one-096/` — the ONE 096 App ID & Dashboard
 deck (16 pages).
@@ -34,8 +45,10 @@ pip install -r requirements.txt
 python app.py                     # http://localhost:5000
 ```
 
-Open `/play` in one window and `/drive?key=hunch` in another. Pick the deck on
-DRIVE; it appears on PLAY. Drive next/back.
+Key your machine once (`/drive?key=hunch` or `/?key=hunch`), then it's a driver.
+On DRIVING, pick the deck — it presents right there; space / arrows / click turn
+the page. Open `/play` in another window (or another device) to watch a SHOWING
+screen follow. An un-keyed browser only ever gets the dumb SHOWING screen.
 
 ## The bulletproof test (the only thing worth proving first)
 
@@ -84,19 +97,23 @@ from page 1 with no driver in the loop. Boring URL, always works.
   worker. Do not raise the worker count. (This reasoning lives here, not in the
   Procfile — Railway's Procfile parser chokes on comment lines.)
 - **Volume:** add a Railway volume and set `GO_DATA` to its mount path. That's
-  where `go-state.json` (the persisted room) lives, and where uploaded decks will
-  land later. Unset (local dev), it falls back to a gitignored file in the repo.
-- Set `GO_KEY` in the Railway env (defaults to `hunch`). DRIVE needs it; PLAY
-  doesn't.
-- Health check: `GET /health` (DRIVE's wire dot polls this too).
+  where `go-state.json` (the persisted room) **and uploaded decks**
+  (`GO_DATA/presentations/<id>/`) live. Baked-in decks stay in the repo,
+  read-only. **Uploads need the volume** — without `GO_DATA` an upload has
+  nowhere permanent to land and the server returns `507`; the SET UP modal shows
+  "Sorry — not connected" when the server's unreachable. Unset locally, state and
+  uploads fall back to gitignored files in the repo dir.
+- Set `GO_KEY` in the Railway env (defaults to `hunch`). Driving/Set-up need it;
+  a showing screen doesn't.
+- Health check: `GET /health` (the wire dot and SET UP's connectivity poll it).
 
 ## What's deliberately NOT here yet
 
-Upload page · title-page generator · send · real three-doors auth · Airtable ·
-mothball-on-send / end-of-day backstop. All of it hangs off this spine once the
-line is proven. The container is already a **folder** (PDF + config.json), so a
-future deck type (native slides, the Claude-voice slide) is a new folder kind,
-not a rewrite.
+Title-page generator · send · "who's in the room" (2.0) · real three-doors auth ·
+Airtable · mothball-on-send / end-of-day backstop. The container is a **folder**
+(PDF + config.json), so a future deck type (native slides, the Claude-voice
+slide) is a new folder kind, not a rewrite. Upload lands a PDF folder on the
+volume; a phone is now the whole app — pick, upload, drive.
 
 ## Notes — checked against the Robot Sandwich repo
 
@@ -127,14 +144,16 @@ not a rewrite.
 app.py                     Flask spine — state (+disk persist), live line, control
 Procfile                   gunicorn: 1 worker, 16 threads, no timeout (comment-free)
 requirements.txt           Flask, gunicorn, pypdf
-templates/choose.html      driving-or-showing chooser  (/, cookied device only)
-templates/play.html        the screen                  (/play)
-templates/drive.html       the controls                (/drive)
+templates/choose.html      three-button door + SET UP modal  (/, cookied only)
+templates/play.html        the screen (SHOWING)        (/play)
+templates/drive.html       DRIVING — present-here      (/drive, cookied only)
 static/play.js             live line, PDF render, GO button, tap-to-advance, hand-over latch
-static/drive.js            shelf, next/back/end, page indicator, wire dot, save-deck
+static/drive.js            present-here, local-first turns (goto sync), wire dot, save
+static/setup.js            SET UP modal — choose (push live) + upload-to-volume
 static/dots.js             Hunch constellation (lifted)
 static/tokens.css          Hunch tokens (VERBATIM from Robot Sandwich)
-static/go.css              GO chrome (+ wire dot, save link)
-presentations/one-096/     test deck: deck.pdf + config.json
+static/go.css              GO chrome (door buttons, modal, SHOWING deck, DRIVING strip)
+presentations/one-096/     baked-in test deck (repo, read-only)
+GO_DATA/presentations/     uploaded decks (the volume)
 go-state.json              the persisted room (on the volume; gitignored locally)
 ```
