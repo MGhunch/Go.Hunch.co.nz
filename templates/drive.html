@@ -20,7 +20,7 @@
       <button onclick="location.href='/drive?key='+encodeURIComponent(document.getElementById('key').value)">UNLOCK</button>
     </div>
     {% else %}
-    <div class="drive-head">GO — DRIVE</div>
+    <div class="drive-head"><span class="dot" id="dot" title="server connection"></span>GO — DRIVE</div>
     <div class="shelf" id="shelf"></div>
     <div class="controls" id="controls" style="display:none">
       <div class="page-read" id="pageread">—</div>
@@ -28,6 +28,7 @@
         <button id="back">BACK</button>
         <button id="next">NEXT</button>
       </div>
+      <a class="save" id="save" download>SAVE DECK TO THIS DEVICE</a>
       <button class="end" id="end">END — BACK TO DOTS</button>
     </div>
     <script src="/static/drive.js"></script>

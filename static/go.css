@@ -89,3 +89,17 @@ body.live #tapnav{display:block}
 .gate button{border:0;cursor:pointer;background:#fff;color:var(--red);
   font-family:var(--display);font-size:22px;letter-spacing:.06em;padding:12px 32px;border-radius:var(--pill)}
 .muted{color:var(--white-hi);font-size:14px;max-width:300px}
+
+/* ---- wire dot (DRIVE header): green = phone can reach server, red = can't ---- */
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;
+  margin-right:10px;vertical-align:middle;background:var(--white-mid);
+  transition:background .3s ease}
+.dot.live{background:#38C172}          /* green — wire's up, your taps land */
+.dot.down{background:var(--red)}       /* red — say "would you mind driving" */
+
+/* ---- save-deck link (the cable-and-PDF floor, one tap) ---- */
+.save{display:block;text-align:center;text-decoration:none;
+  color:var(--white-hi);border:2px solid var(--white-lo);border-radius:var(--pill);
+  font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.02em;
+  padding:12px 0;width:100%;box-sizing:border-box}
+.save:active{color:#fff;border-color:var(--white-mid)}

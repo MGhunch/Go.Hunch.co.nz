@@ -13,7 +13,7 @@ the line is proven bulletproof.
 """
 import os, glob, json, threading
 from flask import (Flask, Response, request, render_template,
-                   jsonify, send_file, abort, make_response)
+                   jsonify, send_file, abort, make_response, redirect)
 from pypdf import PdfReader
 
 app = Flask(__name__)
@@ -25,9 +25,22 @@ PRESENTATIONS = os.path.join(BASE, "presentations")
 # auth (Hunch sees all / client sees only what's pushed) is the next thing.
 GO_KEY = os.environ.get("GO_KEY", "hunch")
 
+# Where the truth is written down so a restart doesn't lose the room. Point
+# GO_DATA at the mounted Railway volume; unset (local dev) it falls back to a
+# file in the repo dir (gitignored). Same volume convention as the family.
+GO_DATA = os.environ.get("GO_DATA")
+STATE_FILE = os.path.join(GO_DATA if GO_DATA else BASE, "go-state.json")
+
+# How often the live line sends a beat when nothing's changing. PLAY uses these
+# beats to know the wire's alive; when they stop for a couple of seconds, PLAY's
+# local keys surface (the hand-over floor). Brisk enough that a real drop shows
+# quickly, not so brisk a blink counts.
+HEARTBEAT = 2  # seconds
+
 # ---------------------------------------------------------------------------
-# LIVE STATE — the truth lives here, in memory, on one worker.
-# epoch bumps on every change; the live line watches it.
+# LIVE STATE — the truth lives here, in memory, on one worker, AND is written
+# to disk on every real change so a restart lands the room back where it was.
+# epoch is a runtime counter only — never persisted, resets to 0 on boot.
 # ---------------------------------------------------------------------------
 _cond = threading.Condition()
 STATE = {"live_job": None, "page": 1, "epoch": 0}
@@ -38,11 +51,44 @@ def snapshot():
         return dict(STATE)
 
 
+def _persist(snap):
+    """Write {live_job, page} down, atomically (temp + rename), so a crash
+    mid-write can't leave a torn file. Called outside the lock — a tiny dict at
+    human pace, disk I/O never blocks the wire."""
+    try:
+        tmp = STATE_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"live_job": snap["live_job"], "page": snap["page"]}, f)
+        os.replace(tmp, STATE_FILE)          # atomic on POSIX
+    except OSError as e:
+        print(f"[go] couldn't persist state ({e})", flush=True)
+
+
 def bump(**changes):
     with _cond:
         STATE.update(changes)
         STATE["epoch"] += 1
         _cond.notify_all()
+        snap = {"live_job": STATE["live_job"], "page": STATE["page"]}
+    _persist(snap)
+
+
+def _restore():
+    """On boot, pick the room back up. Guard: if the persisted deck folder is
+    gone, start dark rather than point PLAY at a missing PDF. A stale deck from
+    yesterday is fine — a fresh push or End clears it (mothball is parked)."""
+    if not os.path.isfile(STATE_FILE):
+        return
+    try:
+        d = json.load(open(STATE_FILE, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        print(f"[go] couldn't read persisted state ({e}) — starting dark", flush=True)
+        return
+    job = d.get("live_job")
+    if job and get_deck(job):
+        STATE["live_job"] = job
+        STATE["page"] = int(d.get("page", 1) or 1)
+    # else: deck gone or was dark — leave STATE at its dark default
 
 
 # ---------------------------------------------------------------------------
@@ -108,6 +154,11 @@ def _cookie_key(resp):
 # ---------------------------------------------------------------------------
 @app.route("/")
 def choose():
+    # The chooser is Michael's surface only. A client's device (no cookie) never
+    # gets asked "driving or showing?" — it goes straight to the showing screen.
+    # The choice only appears once this iPad has been keyed as his.
+    if not authed():
+        return redirect("/play")
     return render_template("choose.html")
 
 
@@ -141,13 +192,16 @@ def events():
         last = s["epoch"]
         while True:
             with _cond:
-                changed = _cond.wait_for(lambda: STATE["epoch"] != last, timeout=15)
+                changed = _cond.wait_for(lambda: STATE["epoch"] != last, timeout=HEARTBEAT)
                 s = dict(STATE)
             if changed:
                 yield "data: " + json.dumps(s) + "\n\n"
                 last = s["epoch"]
             else:
-                yield ": keepalive\n\n"
+                # A named beat PLAY can hear (a bare comment can't be observed in
+                # JS). Its steady arrival is what holds PLAY's local keys down;
+                # when it goes quiet, they surface.
+                yield "event: ping\ndata: 1\n\n"
 
     resp = Response(stream(), mimetype="text/event-stream")
     resp.headers["Cache-Control"] = "no-cache"
@@ -179,11 +233,18 @@ def c_next():
         return jsonify(s)
     d = get_deck(s["live_job"])
     pages = d["pages"] if d else 1
+    changed = False
     with _cond:
-        STATE["page"] = min(STATE["page"] + 1, pages)
-        STATE["epoch"] += 1
-        _cond.notify_all()
+        newp = min(STATE["page"] + 1, pages)
+        if newp != STATE["page"]:
+            STATE["page"] = newp
+            STATE["epoch"] += 1
+            _cond.notify_all()
+            changed = True
+        snap = {"live_job": STATE["live_job"], "page": STATE["page"]}
         s = dict(STATE)
+    if changed:
+        _persist(snap)          # write down only on a real move, not a no-op
     return jsonify(s)
 
 
@@ -191,11 +252,18 @@ def c_next():
 def c_back():
     if not authed():
         abort(403)
+    changed = False
     with _cond:
-        STATE["page"] = max(STATE["page"] - 1, 1)
-        STATE["epoch"] += 1
-        _cond.notify_all()
+        newp = max(STATE["page"] - 1, 1)
+        if newp != STATE["page"]:
+            STATE["page"] = newp
+            STATE["epoch"] += 1
+            _cond.notify_all()
+            changed = True
+        snap = {"live_job": STATE["live_job"], "page": STATE["page"]}
         s = dict(STATE)
+    if changed:
+        _persist(snap)
     return jsonify(s)
 
 
@@ -225,13 +293,23 @@ def state():
 def deck_pdf(deck_id):
     if not get_deck(deck_id):
         abort(404)
-    return send_file(os.path.join(PRESENTATIONS, deck_id, "deck.pdf"),
-                     mimetype="application/pdf")
+    path = os.path.join(PRESENTATIONS, deck_id, "deck.pdf")
+    # ?download=1 forces a save (the cable-and-local-PDF floor); plain serve is
+    # what PLAY streams to render. Same file either way.
+    if request.args.get("download"):
+        return send_file(path, mimetype="application/pdf",
+                         as_attachment=True, download_name=f"{deck_id}.pdf")
+    return send_file(path, mimetype="application/pdf")
 
 
 @app.route("/health")
 def health():
     return jsonify({"ok": True, "decks": len(list_decks())})
+
+
+# Pick the room back up on boot (survives a restart). Runs at import, so it
+# fires under gunicorn's single worker too, not only `python app.py`.
+_restore()
 
 
 if __name__ == "__main__":

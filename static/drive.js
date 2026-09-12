@@ -34,6 +34,8 @@
 
   function deckById(id) { return decks.find(d => d.id === id); }
 
+  const save = document.getElementById('save');
+
   function paint() {
     const on = !!live.live_job;
     controls.style.display = on ? 'flex' : 'none';
@@ -43,8 +45,28 @@
       const d = deckById(live.live_job);
       const total = d ? d.pages : '?';
       pageread.textContent = 'PAGE ' + live.page + ' / ' + total;
+      save.href = '/deck/' + live.live_job + '/pdf?download=1';   // the cable floor: pull it local before the room
     }
   }
+
+  /* ---- the wire dot: can THIS phone reach the server right now? Green = your
+     taps land. Red = they don't — say "would you mind driving, just press
+     space." Reports the wire, not the hand-over. ---- */
+  const dot = document.getElementById('dot');
+  async function ping() {
+    let ok = false;
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 2000);
+      const r = await fetch('/health', { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(t);
+      ok = r.ok;
+    } catch (_) { ok = false; }
+    dot.classList.toggle('live', ok);
+    dot.classList.toggle('down', !ok);
+  }
+  ping();
+  setInterval(ping, 3000);
 
   document.getElementById('next').onclick = () => post('/control/next');
   document.getElementById('back').onclick = () => post('/control/back');

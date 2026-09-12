@@ -53,14 +53,53 @@
     }
   }
 
-  /* ---- the live line. onerror does nothing on purpose: EventSource retries
-     itself, and we keep the last frame on screen the whole time. ---- */
+  /* ==========================================================================
+     GRACEFUL FREEZE (spec — do not regress):
+     Once loaded, the PDF is fully in this browser. A wire drop cannot blank it.
+     We never re-fetch the deck on reconnect (loadDeck early-returns on same
+     job), onerror does nothing, and we never clear the canvas on a wire event.
+     internet dies -> deck stays crisp on the current page, frozen ->
+     internet returns -> next push/turn works and PLAY re-syncs. Never blank.
+
+     THE HAND-OVER LATCH:
+     Local keys (space / arrows) are ALWAYS armed but held down by the live
+     wire's beat. When the beat goes quiet for a couple of seconds (real drop,
+     not a blink), suppression lapses and the first keypress drives the deck
+     locally — and LATCHES: from then on the keyboard owns the room. The wire
+     coming back does NOT reclaim or yank. Nothing has to fire at the moment of
+     failure; the wire's absence is the trigger. One way, no reconcile.
+     ========================================================================== */
+  const WIRE_DEAD_MS = 4500;    // ~2 missed beats + margin: a drop, not a blink
+  let lastBeat = Date.now();
+  let latched = false;          // once true, the keyboard owns the room. Never flips back.
+  const wireAlive = () => (Date.now() - lastBeat) < WIRE_DEAD_MS;
+
   function connect() {
     const es = new EventSource('/events');
-    es.onmessage = e => { try { applyState(JSON.parse(e.data)); } catch (_) {} };
-    es.onerror = () => { /* hold the frame; browser auto-reconnects */ };
+    es.onopen = () => { lastBeat = Date.now(); };
+    es.addEventListener('ping', () => { lastBeat = Date.now(); });
+    es.onmessage = e => {
+      lastBeat = Date.now();
+      if (latched) return;      // handed over — the wire no longer moves this screen
+      try { applyState(JSON.parse(e.data)); } catch (_) {}
+    };
+    es.onerror = () => { /* hold the frame; browser auto-reconnects; let the
+                            beat age so the wire reads as down */ };
   }
   connect();
+
+  /* local drive — only bites once the wire's been quiet a couple of seconds */
+  function localTurn(dir) {
+    if (!body.classList.contains('live') || !pdfDoc) return;
+    if (wireAlive()) return;          // suppressed while the wire beats
+    latched = true;                   // the hand-over: one way from here
+    curPage = Math.max(1, Math.min(curPage + dir, numPages));
+    renderPage(curPage);
+  }
+  window.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'PageDown') { localTurn(+1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { localTurn(-1); e.preventDefault(); }
+  });
 
   /* ---- re-fit the current page when the screen resizes ---- */
   window.addEventListener('resize', () => { if (body.classList.contains('live')) renderPage(curPage); });
@@ -70,9 +109,15 @@
      which is exactly right — nobody taps it there. ---- */
   document.getElementById('tapnav').addEventListener('click', e => {
     if (!body.classList.contains('live')) return;
-    const dir = (e.clientX / window.innerWidth) > 0.5 ? 'next' : 'back';
-    fetch('/control/' + dir, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      .catch(() => {});
+    const fwd = (e.clientX / window.innerWidth) > 0.5;
+    if (wireAlive() && !latched) {
+      // wire's up — go through the server so state stays central
+      fetch('/control/' + (fwd ? 'next' : 'back'),
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+    } else {
+      // wire's down (or already handed over) — drive locally, same latch
+      localTurn(fwd ? +1 : -1);
+    }
   });
 
   /* ---- the GO button: the one tap the client's browser is asked for.
