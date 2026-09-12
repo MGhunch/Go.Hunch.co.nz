@@ -4,6 +4,8 @@ Get the work onto a screen, cleanly, from anywhere, with your phone as the
 remote. Spine + hardening: the live line, and a soft floor under it for when
 the wire, the server, or the wifi lets go.
 
+Commit Changes
+
 ## What it does right now
 
 - One server holds the truth: which job is live, and what page it's on — and
