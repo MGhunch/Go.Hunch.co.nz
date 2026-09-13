@@ -6,6 +6,8 @@
    The controller floats over the deck in the Hunch language and auto-hides.
    ========================================================================== */
 (function () {
+  // Narrow screen? phone.js runs the presenter remote — present-here stands down.
+  if (window.matchMedia && matchMedia('(max-width: 820px)').matches) return;
   const body = document.body;
   const shelf = document.getElementById('shelf');
   const deckCanvas = document.getElementById('deck-canvas');

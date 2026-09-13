@@ -183,7 +183,7 @@ def authed():
 def _cookie_key(resp):
     """If a valid ?key= is on the URL, remember it on this device."""
     if request.args.get("key") == GO_KEY:
-        resp.set_cookie("go_key", GO_KEY, max_age=60 * 60 * 12, samesite="Lax")
+        resp.set_cookie("go_key", GO_KEY, max_age=60 * 60 * 24 * 365, samesite="Lax")
     return resp
 
 

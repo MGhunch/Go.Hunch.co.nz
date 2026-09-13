@@ -2,13 +2,22 @@
 <html lang="en-NZ">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>GO — driving</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/go.css">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/static/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#ED1C24">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GO">
 </head>
 <body data-mode="drive">
 
@@ -59,6 +68,69 @@
     </div>
   </div>
 
+  <!-- ======================================================================
+       PHONE — the presenter remote. Shown only on a narrow screen (CSS), where
+       the phone drives the ROOM rather than presenting here. Same disc + lozenge
+       language, big drive, full lozenge, four tools, a swappable pane, a clock.
+       ==================================================================== -->
+  <div id="phone">
+    <div class="ph-shelf" id="ph-shelf"></div>
+
+    <div class="ph-stage" id="ph-stage" hidden>
+      <div class="ph-label" id="ph-label" role="button" tabindex="0" aria-label="Change view">—</div>
+
+      <div class="ph-pane" id="ph-pane" data-view="next">
+        <div class="ph-prev" id="ph-cur"><span class="ph-tag">ON SCREEN</span><canvas id="ph-cur-cv"></canvas></div>
+        <div class="ph-prev ph-next" id="ph-next"><span class="ph-tag">NEXT</span><canvas id="ph-next-cv"></canvas></div>
+        <div class="ph-eyesup">eyes up</div>
+      </div>
+
+      <div class="ph-loz" id="ph-loz">
+        <span class="ph-pg" id="ph-pg">— / —</span>
+        <span class="ph-time" id="ph-timewrap"><i class="ph-pip" id="ph-pip"></i><span class="ph-clock" id="ph-clock">00:00</span></span>
+      </div>
+
+      <div class="ph-drive">
+        <button class="ph-big" id="ph-back" aria-label="Back">
+          <svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>
+        </button>
+        <button class="ph-big" id="ph-fwd" aria-label="Forward">
+          <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <div class="ph-tools">
+        <button class="ph-tool" id="ph-clockbtn" aria-label="Clock">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        </button>
+        <button class="ph-tool" id="ph-again" aria-label="Start again">
+          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 5v5h-5"/></svg>
+        </button>
+        <button class="ph-tool" id="ph-pick" aria-label="Pick a new talk">
+          <svg viewBox="0 0 24 24"><path d="M4 7h5l2 2h9v9H4z"/><path d="M12 12v5M9.5 14.5h5"/></svg>
+        </button>
+        <button class="ph-tool" id="ph-end" aria-label="End">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- clock drawer -->
+    <div class="ph-modal" id="ph-modal" data-mode="timer" hidden>
+      <div class="ph-sheet" role="dialog" aria-label="Clock">
+        <div class="ph-grab"></div>
+        <div class="ph-mode" data-mode="timer">Timer <em>counts up</em></div>
+        <div class="ph-mode" data-mode="countdown">Countdown <em>counts down</em></div>
+        <div class="ph-dur" id="ph-durrow">
+          <button id="ph-dur-min" aria-label="Less"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+          <span class="ph-durval" id="ph-dur">20:00</span>
+          <button id="ph-dur-plus" aria-label="More"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+        </div>
+        <div class="ph-mode" data-mode="time">Time <em id="ph-now">—</em></div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib) {
@@ -67,5 +139,6 @@
     }
   </script>
   <script src="/static/drive.js"></script>
+  <script src="/static/phone.js"></script>
 </body>
 </html>

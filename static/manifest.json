@@ -1,0 +1,13 @@
+{
+  "name": "GO — Hunch",
+  "short_name": "GO",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ED1C24",
+  "theme_color": "#ED1C24",
+  "icons": [
+    { "src": "/static/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/static/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/static/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
