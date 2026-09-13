@@ -1,20 +1,19 @@
 /* ============================================================================
    DRIVING — this machine runs the show.
-   Pick a pack; it goes live and renders right here. Space / arrows / click
-   turn the page LOCALLY-FIRST — instant, because the PDF's already in this
-   browser — then tell the server, so it persists and any SHOWING screen
-   follows. Works with no wifi at all once the deck's loaded (cable to a TV,
-   dead room): local drives, the wire's a passenger.
+   Pick a pack; it presents right here. Space / arrows / click / the on-screen
+   back+forward turn the page LOCALLY-FIRST (instant, PDF's already in the
+   browser) then tell the server so it persists and any SHOWING screen follows.
+   The controller floats over the deck in the Hunch language and auto-hides.
    ========================================================================== */
 (function () {
   const body = document.body;
-  const pick = document.getElementById('pick');
   const shelf = document.getElementById('shelf');
   const deckCanvas = document.getElementById('deck-canvas');
   const ctx = deckCanvas.getContext('2d');
-  const strip = document.getElementById('strip');
-  const pageread = document.getElementById('pageread');
-  const saveEl = document.getElementById('save');
+  const ctrl = document.getElementById('ctrl');
+  const pageEl = document.getElementById('c-page');
+  const timerEl = document.getElementById('c-timer');
+  const pip = document.getElementById('c-pip');
 
   let decks = [], pdfDoc = null, curJob = null, curPage = 1, numPages = 1;
   let rendering = false, pending = null;
@@ -45,36 +44,27 @@
     rendering = false;
     if (pending !== null) { const p = pending; pending = null; renderPage(p); }
   }
-
-  function readout() {
-    pageread.textContent = 'PAGE ' + curPage + ' / ' + numPages;
-    if (curJob) saveEl.href = '/deck/' + curJob + '/pdf?download=1';
-  }
+  function readout() { pageEl.textContent = curPage + ' / ' + numPages; }
 
   // ---- present a deck on this machine ----
   async function present(job, page) {
     await loadDeck(job);
     curPage = Math.max(1, Math.min(page || 1, numPages));
     body.classList.add('presenting');
-    renderPage(curPage);
-    readout();
+    renderPage(curPage); readout(); nudge();
   }
 
   // ---- the turn: move here NOW, tell the server after ----
-  function turn(dir) {
-    if (!body.classList.contains('presenting') || !pdfDoc) return;
-    const np = Math.max(1, Math.min(curPage + dir, numPages));
+  function goTo(page) {
+    const np = Math.max(1, Math.min(page, numPages));
     if (np === curPage) return;
-    curPage = np;
-    renderPage(curPage);
-    readout();
-    // sync — absolute page, fire-and-forget. If the wire's down it just fails
-    // quietly and the local show carries on; the next turn resyncs the server.
+    curPage = np; renderPage(curPage); readout();
     fetch('/control/goto', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: curPage })
     }).catch(() => {});
   }
+  function turn(d) { if (body.classList.contains('presenting') && pdfDoc) goTo(curPage + d); }
 
   // ---- pick a deck from the shelf → push live → present here ----
   async function pickDeck(job) {
@@ -82,6 +72,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ job })
     }).catch(() => {});
+    resetTimer(); startTimer();
     present(job, 1);
   }
 
@@ -98,8 +89,6 @@
     });
   }
 
-  // on load: if a deck's already live (resumed from disk), pick the show back
-  // up where it was; otherwise show the shelf.
   async function boot() {
     await loadShelf();
     try {
@@ -110,56 +99,63 @@
   }
   boot();
 
-  // ---- controls ----
-  document.getElementById('switch').onclick = () => { body.classList.remove('presenting'); };
-  document.getElementById('end').onclick = () => {
-    fetch('/control/end', { method: 'POST' }).catch(() => {});
-    body.classList.remove('presenting');
+  // ---- controller actions ----
+  document.getElementById('c-back').onclick = () => turn(-1);
+  document.getElementById('c-fwd').onclick  = () => turn(+1);
+  document.getElementById('c-again').onclick = () => goTo(1);                 // start again
+  document.getElementById('c-pick').onclick = () => {                          // pick a new talk
+    body.classList.remove('presenting'); stopTimer();
   };
-  document.getElementById('tapnav').addEventListener('click', e => {
-    turn((e.clientX / window.innerWidth) > 0.5 ? +1 : -1);
-  });
+  document.getElementById('c-end').onclick = () => {                           // end → dark
+    fetch('/control/end', { method: 'POST' }).catch(() => {});
+    body.classList.remove('presenting'); resetTimer();
+  };
+  document.getElementById('c-hide').onclick = () => ctrl.classList.remove('show');  // tuck controls away
+
+  // keyboard + tap drive too
   window.addEventListener('keydown', e => {
     if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'PageDown') { turn(+1); e.preventDefault(); }
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { turn(-1); e.preventDefault(); }
   });
+  document.getElementById('tapnav').addEventListener('click', e => {
+    turn((e.clientX / window.innerWidth) > 0.5 ? +1 : -1);
+  });
   window.addEventListener('resize', () => { if (body.classList.contains('presenting')) renderPage(curPage); });
 
-  // ---- fullscreen (this machine shows, so it gets the button) ----
-  (function () {
-    const btn = document.getElementById('full');
-    const el = document.documentElement;
-    const fsOn = () => document.fullscreenElement || document.webkitFullscreenElement || false;
-    function paint() { btn.textContent = fsOn() ? 'EXIT FULL' : 'FULL SCREEN'; }
-    btn.onclick = () => {
-      if (fsOn()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
-      else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) r.call(el).catch(() => {}); }
-    };
-    document.addEventListener('fullscreenchange', paint);
-    document.addEventListener('webkitfullscreenchange', paint);
-    paint();
-  })();
+  // ---- full screen (timer auto-starts on entering full screen) ----
+  const el = document.documentElement;
+  const fsOn = () => document.fullscreenElement || document.webkitFullscreenElement || false;
+  document.getElementById('c-full').onclick = () => {
+    if (fsOn()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
+    else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) r.call(el).catch(() => {}); }
+  };
+  function onFs() { if (fsOn() && body.classList.contains('presenting')) startTimer(); nudge(); }
+  document.addEventListener('fullscreenchange', onFs);
+  document.addEventListener('webkitfullscreenchange', onFs);
 
-  // ---- auto-hiding control strip ----
+  // ---- elapsed timer (counts up; count-down toggle is a later SET UP option) ----
+  let t0 = null, tHandle = null;
+  function fmt(ms) { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+  function startTimer() { if (tHandle) return; if (!t0) t0 = Date.now(); tHandle = setInterval(() => timerEl.textContent = fmt(Date.now() - t0), 500); }
+  function stopTimer() { clearInterval(tHandle); tHandle = null; }
+  function resetTimer() { stopTimer(); t0 = null; timerEl.textContent = '00:00'; }
+
+  // ---- auto-hide: show on any activity, tuck away after a pause ----
   let hideT;
-  function nudge() { strip.classList.add('show'); clearTimeout(hideT); hideT = setTimeout(() => strip.classList.remove('show'), 2500); }
-  window.addEventListener('mousemove', nudge);
-  window.addEventListener('keydown', nudge);
-  document.getElementById('tapnav').addEventListener('click', nudge);
+  function nudge() {
+    ctrl.classList.add('show'); clearTimeout(hideT);
+    hideT = setTimeout(() => ctrl.classList.remove('show'), 2600);
+  }
+  ['mousemove', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, nudge, { passive: true }));
 
-  // ---- wire dot: can this machine reach the server? (green = SHOWING screens
-  //      will follow; red = you're driving local-only, which is fine) ----
-  const dots = [document.getElementById('dot'), document.getElementById('dot2')].filter(Boolean);
+  // ---- wire pip: green = this machine reaches the server (SHOWING screens follow) ----
   async function ping() {
     let ok = false;
     try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 2000);
-      const r = await fetch('/health', { signal: ctrl.signal, cache: 'no-store' });
-      clearTimeout(t); ok = r.ok;
+      const c = new AbortController(); const t = setTimeout(() => c.abort(), 2000);
+      const r = await fetch('/health', { signal: c.signal, cache: 'no-store' }); clearTimeout(t); ok = r.ok;
     } catch (_) { ok = false; }
-    dots.forEach(d => { d.classList.toggle('live', ok); d.classList.toggle('down', !ok); });
+    pip.classList.toggle('live', ok); pip.classList.toggle('down', !ok);
   }
-  ping();
-  setInterval(ping, 3000);
+  ping(); setInterval(ping, 3000);
 })();

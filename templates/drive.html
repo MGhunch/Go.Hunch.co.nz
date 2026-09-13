@@ -22,14 +22,41 @@
   <div id="deck"><canvas id="deck-canvas"></canvas></div>
   <div id="tapnav"></div>
 
-  <!-- auto-hiding control strip (Michael's, gets out of the way for the room) -->
-  <div class="strip" id="strip">
-    <span class="dot" id="dot2"></span>
-    <span class="page-read" id="pageread">—</span>
-    <a class="s-btn" id="save" download>SAVE</a>
-    <button class="s-btn" id="switch">SWITCH</button>
-    <button class="s-btn" id="end">END</button>
-    <button class="s-btn" id="full">FULL SCREEN</button>
+  <!-- the controller — Hunch language, floats over the deck, auto-hides -->
+  <div class="ctrl" id="ctrl">
+    <div class="ctrl-hero">
+      <button class="cdisc big" id="c-back" aria-label="Back">
+        <svg viewBox="-12 -12 24 24"><path d="M4 -9 -5 0 4 9"/></svg>
+      </button>
+      <div class="lozenge">
+        <span class="pip" id="c-pip"></span>
+        <span class="pg" id="c-page">— / —</span>
+        <span class="tm" id="c-timer">00:00</span>
+      </div>
+      <button class="cdisc big" id="c-fwd" aria-label="Forward">
+        <svg viewBox="-12 -12 24 24"><path d="M-4 -9 5 0 -4 9"/></svg>
+      </button>
+    </div>
+    <div class="ctrl-support">
+      <button class="cdisc" id="c-full" aria-label="Full screen">
+        <svg viewBox="-12 -12 24 24"><path d="M-8 -4V-8h4M8 -4V-8h-4M-8 4V8h4M8 4V8h-4"/></svg>
+      </button>
+      <button class="cdisc" id="c-hide" aria-label="Hide controls">
+        <svg viewBox="-12 -12 24 24"><path d="M-9 0S-5 -5 0 -5 9 0 9 0 5 5 0 5 -9 0 -9 0Z"/><circle cx="0" cy="0" r="2.1"/><path d="M-8 -8 8 8"/></svg>
+      </button>
+      <button class="cdisc" id="c-sound" aria-label="Sound (no audio in this deck)" disabled>
+        <svg viewBox="-12 -12 24 24"><path d="M-9 -3H-4L1 -7V7L-4 3H-9Z"/><path d="M4 -4a5 5 0 0 1 0 8"/><path d="M7 -7a9 9 0 0 1 0 14"/></svg>
+      </button>
+      <button class="cdisc" id="c-again" aria-label="Start again">
+        <svg viewBox="-12 -12 24 24"><path d="M3.66 -8.22 L4.39 -7.86 L5.08 -7.43 L5.74 -6.93 L6.34 -6.39 L6.89 -5.79 L7.39 -5.14 L7.83 -4.45 L8.20 -3.72 L8.50 -2.96 L8.73 -2.18 L8.89 -1.38 L8.98 -0.57 L9.00 0.25 L8.94 1.07 L8.80 1.87 L8.60 2.66 L8.32 3.43 L7.98 4.17 L7.57 4.88 L7.09 5.54 L6.56 6.16 L5.98 6.73 L5.34 7.24 L4.66 7.70 L3.95 8.09 L3.20 8.41 L2.42 8.67 L1.62 8.85 L0.82 8.96 L0.00 9.00 L-0.82 8.96 L-1.62 8.85 L-2.42 8.67 L-3.20 8.41 L-3.95 8.09 L-4.66 7.70 L-5.34 7.24 L-5.98 6.73 L-6.56 6.16 L-7.09 5.54 L-7.57 4.88 L-7.98 4.17 L-8.32 3.43 L-8.60 2.66 L-8.80 1.87 L-8.94 1.07 L-9.00 0.25 L-8.98 -0.57 L-8.89 -1.38 L-8.73 -2.18 L-8.50 -2.96 L-8.20 -3.72 L-7.83 -4.45 L-7.39 -5.14 L-6.89 -5.79 L-6.34 -6.39 L-5.74 -6.93 L-5.08 -7.43 L-4.39 -7.86 L-3.66 -8.22"/><path d="M-1.82 -10.66 L5.41 -12.15 L1.91 -4.29 Z" class="fill"/></svg>
+      </button>
+      <button class="cdisc" id="c-pick" aria-label="Pick a new talk">
+        <svg viewBox="-12 -12 24 24"><path d="M-11 -9h6l2 2.5h14V9h-22Z"/><path d="M0 -2.5V5.5M-4 1.5H4"/></svg>
+      </button>
+      <button class="cdisc" id="c-end" aria-label="End">
+        <svg viewBox="-12 -12 24 24"><path d="M-6 -6 6 6M6 -6 -6 6"/></svg>
+      </button>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

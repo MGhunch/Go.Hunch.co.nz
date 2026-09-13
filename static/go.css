@@ -113,26 +113,55 @@ body.presenting .drive-pick{display:none}       /* shelf gives way to the deck *
 .deck-btn small{display:block;font-family:var(--body);font-weight:600;font-size:12px;
   letter-spacing:.02em;color:var(--ink);opacity:.55;margin-top:6px}
 
-/* auto-hiding control strip over the deck — Michael's, gets out of the room's way */
-.strip{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(14px);
-  z-index:31;display:none;align-items:center;gap:14px;
-  background:rgba(26,25,23,.82);backdrop-filter:blur(6px);
-  border-radius:var(--pill);padding:9px 9px 9px 18px;
-  opacity:0;transition:opacity .25s ease, transform .25s ease}
-body.presenting .strip{display:flex}
-.strip.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.page-read{font-family:var(--display);font-size:17px;letter-spacing:.06em;color:#fff;opacity:.9;white-space:nowrap}
-.s-btn{border:0;cursor:pointer;background:rgba(255,255,255,.14);color:#fff;text-decoration:none;
-  font-family:var(--display);font-size:15px;letter-spacing:.05em;
-  padding:9px 16px;border-radius:var(--pill);line-height:1;white-space:nowrap}
-.s-btn:hover{background:rgba(255,255,255,.24)}
-.s-btn:active{transform:translateY(1px)}
+/* ============================================================================
+   THE CONTROLLER — Hunch language: white discs, red icons, red lozenge.
+   Floats over the deck, auto-hides. Hero (back · page/timer · forward) big;
+   support (full · hide · sound · start-again · pick · end) small beneath.
+   ========================================================================== */
+.ctrl{position:fixed;left:50%;bottom:calc(34px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(12px);z-index:31;
+  display:none;flex-direction:column;align-items:center;gap:16px;
+  opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease}
+body.presenting .ctrl{display:flex}
+.ctrl.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 
-/* ---- wire dot: green = this machine can reach the server (SHOWING screens
-        will follow); red = driving local-only, which is fine ---- */
+.ctrl-hero{display:flex;align-items:center;gap:22px}
+.ctrl-support{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;max-width:440px}
+
+.cdisc{border:0;cursor:pointer;background:#fff;border-radius:50%;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 8px 20px rgba(0,0,0,.26);
+  transition:transform .1s ease, box-shadow .1s ease, background .1s ease}
+.cdisc svg{stroke:var(--red);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cdisc svg .fill{fill:var(--red)}
+.cdisc.big{width:80px;height:80px}
+.cdisc.big svg{width:36px;height:36px;stroke-width:2.6}
+.cdisc:not(.big){width:48px;height:48px}
+.cdisc:not(.big) svg{width:23px;height:23px}
+.cdisc:active{transform:translateY(2px) scale(.95);box-shadow:0 3px 10px rgba(0,0,0,.2);background:#EDE9E4}
+.cdisc:disabled{opacity:.42;cursor:default;box-shadow:0 4px 12px rgba(0,0,0,.14)}
+.cdisc:disabled:active{transform:none;background:#fff}
+
+/* page + timer lozenge */
+.lozenge{position:relative;background:var(--red);color:#fff;border-radius:var(--pill);
+  padding:12px 30px;min-width:132px;box-shadow:0 8px 20px rgba(0,0,0,.26);
+  display:flex;flex-direction:column;align-items:center;line-height:1}
+.lozenge .pg{font-family:var(--display);font-size:32px;letter-spacing:1px}
+.lozenge .tm{font-family:var(--body);font-weight:700;font-size:14px;opacity:.9;margin-top:4px}
+.lozenge .pip{position:absolute;top:11px;left:13px;width:9px;height:9px;border-radius:50%;
+  background:var(--white-lo);transition:background .3s ease}
+.lozenge .pip.live{background:#38C172}
+.lozenge .pip.down{background:#ffd6d6}
+
+@media (max-width:520px){
+  .cdisc.big{width:66px;height:66px} .cdisc.big svg{width:30px;height:30px}
+  .ctrl-hero{gap:14px} .ctrl-support{gap:10px;max-width:300px} .lozenge{min-width:112px;padding:10px 22px}
+  .lozenge .pg{font-size:26px}
+}
+
+/* wire dot on the DRIVING shelf header */
 .dot{display:inline-block;width:11px;height:11px;border-radius:50%;
-  margin-right:10px;vertical-align:middle;background:var(--white-mid);
-  transition:background .3s ease}
-.strip .dot{margin-right:0}
+  margin-right:10px;vertical-align:middle;background:var(--white-mid);transition:background .3s ease}
 .dot.live{background:#38C172}
 .dot.down{background:var(--red)}
